@@ -15,7 +15,7 @@ import xlrd
 # print(c2.graph is default_graph, c1.graph is default_graph)
 
 
-def main():
+def parse_full():
     a = xlrd.open_workbook("dataset.xlsx")
 
     for sheetnum in range(0,11):
@@ -36,6 +36,3 @@ def main():
     #         print(c_el,end=' ')
     pass
 
-
-if __name__ == '__main__':
-    main()

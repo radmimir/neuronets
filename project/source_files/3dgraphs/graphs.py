@@ -8,9 +8,9 @@ import xlrd
 def read_xl():
     a = xlrd.open_workbook("dataset_last (copy).xlsx")
     sheet = a.sheet_by_index(4)
-    CO2 = sheet.col_values(5, 7, 5000)
-    TIME = sheet.col_values(0, 7, 5000)
-    TTOPOIL = sheet.col_values(17, 7, 5000)
+    CO2 = sheet.col_values(5, 172, 5000)
+    TIME = sheet.col_values(0, 172, 5000)
+    TTOPOIL = sheet.col_values(17, 172, 5000)
     n = len(CO2)
     m = len(TIME)
     k = len(TTOPOIL)
@@ -42,8 +42,8 @@ def mul_regr():  # решение Матричного уравнения AX = Y
         b = sheet.row_values(i)
         if '' in b or None in b:
             continue
-        b[1] += 273
-        b[2] -= first
+        b[1] += 273 # температура
+        b[2] -= first # время(относительное)
         x1.append(b[1])
         x2.append(b[2])
         q.append(b[0])
@@ -65,15 +65,15 @@ def graph3d(x1, x2, yy, q):
     fig = plt.figure()
     ax = Axes3D(fig)
     # TIME, CO2, TTOPOIL = read_xl()
-    ax.scatter(x1, x2, yy)  # CO2, TTOPOIL, TIME) построение графика аппроксимации
+    ax.plot3D(x1, x2, yy,color='red')  # CO2, TTOPOIL, TIME) построение графика аппроксимации
     ax.scatter(x1, x2, q)  # построение графика исходных
     xs = np.zeros(1000)
     ys = np.zeros(1000)
     zs = np.array([i for i in range(42700, 43700)])
     # ax.plot3D(xs, ys, zs)
-    ax.set_xlabel('q')
-    ax.set_ylabel('T')
-    ax.set_zlabel('TIME')
+    ax.set_xlabel('TOIL')
+    ax.set_ylabel('TIME')
+    ax.set_zlabel('CONCENT')
     plt.show()
 
 
@@ -106,15 +106,13 @@ def exp_regr():  # решение Матричного уравнения AX = Y
 
 
 def linalg():
-    a, x1, x2, q = exp_regr()
-    print(a)
+    a, x1, x2, q = mul_regr() # exp_regr()
     n = len(x1)
     yy = []
     for i in range(n):
-        # yy.append(res[0] * (x1[i] ** res[1]) * (x2[i] ** res[2]))
-        yy.append(a[0]*(math.e**(a[1] * x1[i] + a[2] * x2[i])))
+        yy.append(a[0] * (x1[i] ** a[1]) * (x2[i] ** a[2]))
+        # yy.append(a[0] * (math.e ** (a[1] * x1[i] + a[2] * x2[i]))) exp
     graph3d(x1, x2, yy, q)
     # print(CO2)
-
 
 linalg()
