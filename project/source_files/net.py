@@ -7,6 +7,7 @@ import math
 from keras import backend as K
 from mpl_toolkits.mplot3d import Axes3D
 from keras.utils import plot_model
+import pandas as pd
 
 # импортируем бэкенд Agg из matplotlib для сохранения графиков на диск
 import matplotlib
@@ -89,9 +90,21 @@ def net():
     predictions = predictions.reshape(1, len(predictions))
     predictions = list(predictions[0])
     appr = linalg(TTOPOIL, TIME)
-    graph3d(TTOPOIL, TIME, predictions, CO2, appr)
+    x, y, z1, z2, z3 = [], [], [], [], []
+    step = 20
+    for i in range(4 * step, len(TIME), step):
+        x.append(TIME[i])
+        y.append(TTOPOIL[i])
+        z1.append(mean([predictions[i], predictions[i - step], predictions[i - 2 * step], predictions[i - 3 * step],
+                        predictions[i - 4 * step]]))
+        z3.append(mean([appr[i], appr[i - step], appr[i - 2 * step], appr[i - 3 * step], appr[i - 4 * step]]))
+    graph3d(TIME, TTOPOIL, z1, CO2, z3, x, y)
     plot_model(model, "model.png", True, True, expand_nested=True)
     # plot_results(history)
+
+
+def mean(x):
+    return sum(x) / len(x)
 
 
 def activation1(x):
@@ -117,11 +130,17 @@ def activation4(x):
     return K.switch(K.greater(x, 650), K.exp(-x), K.zeros(x.shape))
 
 
-def plot1():  # простой график двумерный
-    TIME, CO2, TEMP = read_xl()
-    fig = plt.figure()
-    plt.plot(TEMP, CO2)
-    plt.show()
+def plot1(x, y1):  # простой график двумерный
+    fig, ax = plt.subplots()
+    ax.plot(x, y1)
+    ax.set_xlabel('TIME')
+    ax.set_ylabel('CONCENT')
+    ax.set_title('Тр 35')
+    ax.grid()
+    filename = 'results/35.png'
+    plt.savefig(filename, dpi=96)
+    plt.gca()
+    # plt.show()
 
 
 def create_mlp(dim, x_train, regress=False):
@@ -180,15 +199,15 @@ def create_mlp(dim, x_train, regress=False):
     return model
 
 
-def graph3d(x1, x2, yy, q, appr):
+def graph3d(x1, x2, yy, q, appr, x1new, x2new):
     fig = plt.figure()
     ax = Axes3D(fig)
     # TIME, CO2, TTOPOIL = read_xl()
-    ax.plot3D(x1, x2, yy, color='red')  # CO2, TTOPOIL, TIME) построение графика регрессии из предсказанных значений
-    ax.plot3D(x1, x2, q)  # построение графика исходных
-    print(len(x1), len(x2), len(appr))
-    ax.plot3D(x1, x2, appr, color='green')  # CO2, TTOPOIL, TIME) построение графика аппроксимации
-    ax.legend(['Нейросеть', 'Исходные', 'Аналитическая'])
+    # ax.plot3D(x1new, x2new, yy,
+    #          color='red', linewidth=3.0)  # CO2, TTOPOIL, TIME) построение графика регрессии из предсказанных значений
+    ax.plot3D(x1, x2, q, linewidth=0.5)  # построение графика исходных
+    ax.plot3D(x1new, x2new, appr, color='green', linewidth=3.0)  # CO2, TTOPOIL, TIME) построение графика аппроксимации
+    ax.legend(['Прогноз нейросети', 'Исх. данные', 'Анал. модель'])
     xs = np.zeros(1000)
     ys = np.zeros(1000)
     zs = np.array([i for i in range(42700, 43700)])
@@ -196,8 +215,39 @@ def graph3d(x1, x2, yy, q, appr):
     ax.set_xlabel('TOIL')
     ax.set_ylabel('TIME')
     ax.set_zlabel('CONCENT')
-    ax.view_init(0, 0)
-    plt.show()
+    ax.set_label('29')
+    ax.view_init(0, -90)
+    ax.view_init(0, 180)
+    filename = 'results/step_180.png'
+    plt.savefig(filename, dpi=96)
+    ax.view_init(0, -90)
+    filename = 'results/step_-90.png'
+    plt.savefig(filename, dpi=96)
+
+    # Мы собираемся сделать 20 графиков, для 20 разных углов
+    """for file in os.listdir('frames'):
+        file_path = os.path.join('frames', file)
+        os.unlink(file_path)
+    for angle in range(70, 270, 2):
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        ax.plot3D(x1new, x2new, yy,
+                  color='red',
+                  linewidth=3.0)  # CO2, TTOPOIL, TIME) построение графика регрессии из предсказанных значений
+        ax.plot3D(x1, x2, q, linewidth=0.5)  # построение графика исходных
+        ax.plot3D(x1new, x2new, appr, color='green',
+                  linewidth=3.0)  # CO2, TTOPOIL, TIME) построение графика аппроксимации
+        ax.set_xlabel('TOIL')
+        ax.set_ylabel('TIME')
+        ax.set_zlabel('CONCENT')
+        ax.legend(['Прогноз нейросети', 'Исх. данные', 'Анал. модель'])
+
+        ax.view_init(30, angle)
+
+        filename = 'frames/step' + str(angle) + '.png'
+        plt.savefig(filename, dpi=96)
+        plt.gca()"""
+    # plt.show()
 
 
 def plot_results(history):
