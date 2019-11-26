@@ -1,9 +1,12 @@
 import tensorflow as tf
 from tensorflow import keras
+import tensorflow as tf
 import numpy as np
 import xlrd
 import math
+from keras import backend as K
 from mpl_toolkits.mplot3d import Axes3D
+from keras.utils import plot_model
 
 # импортируем бэкенд Agg из matplotlib для сохранения графиков на диск
 import matplotlib
@@ -13,6 +16,7 @@ import matplotlib
 # подключаем необходимые пакеты
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
+from keras.utils.generic_utils import get_custom_objects
 from sklearn.metrics import classification_report
 from keras import Sequential
 from keras.layers import *
@@ -74,21 +78,43 @@ def net():
     x_test = x_test.reshape(4815, 2)
     y_test = np.array(CO2, dtype='float')
     y_test = y_test.reshape(4815, 1)"""
-
     (x_train1, x_test) = train_test_split(x_train, test_size=0.25, random_state=42)
     (y_train1, y_test) = train_test_split(y_train, test_size=0.25, random_state=42)
     model = create_mlp(2, x_train, regress=True)
     model.compile(optimizer='adam',
-                  loss='mae',
+                  loss='mse',
                   metrics=['mse', 'mae'])
-    history = model.fit(x_train1, y_train1, validation_data=(x_test, y_test), epochs=50)
+    history = model.fit(x_train1, y_train1, validation_data=(x_test, y_test), epochs=30)
     predictions = model.predict(x_train)
     predictions = predictions.reshape(1, len(predictions))
     predictions = list(predictions[0])
-    appr = linalg()
-    print(appr)
-    graph3d(TTOPOIL, TIME, CO2, predictions, appr)
+    appr = linalg(TTOPOIL, TIME)
+    graph3d(TTOPOIL, TIME, predictions, CO2, appr)
+    plot_model(model, "model.png", True, True, expand_nested=True)
     # plot_results(history)
+
+
+def activation1(x):
+    # time = x[1]
+    # print(y, x)
+    return K.exp(x)
+    # K.dot(K.elu(x), y)
+    # return K.switch(K.less(x, 250), K.exp(x), K.zeros(x.shape()))
+
+
+def activation2(x):
+    # time = x[1]
+    return K.switch(K.greater(x, 250), K.exp(-x), K.zeros(x.shape))
+
+
+def activation3(x):
+    # time = x[1]
+    return K.switch(K.greater(x, 450), K.exp(x), K.zeros(x.shape))
+
+
+def activation4(x):
+    # time = x[1]
+    return K.switch(K.greater(x, 650), K.exp(-x), K.zeros(x.shape))
 
 
 def plot1():  # простой график двумерный
@@ -99,13 +125,42 @@ def plot1():  # простой график двумерный
 
 
 def create_mlp(dim, x_train, regress=False):
-    # define our MLP network
+    # define our MLP networkmodel = Sequential()
     model = Sequential()
     model.add(Dense(64, input_dim=2))
-    # model.add(BatchNormalization())
-    # model.add(LeakyReLU())
+    # for i in range(50):
+    # .add(Dense(64))
+    # model.add(Activation('tanh'))  # , activation='sigmoid'))
+    """get_custom_objects().update({'activation1': Activation(activation1)})
+    get_custom_objects().update({'activation2': Activation(activation2)})
+    get_custom_objects().update({'activation3': Activation(activation3)})
+    get_custom_objects().update({'activation4': Activation(activation4)})"""
+    """model.add(Dense(64, input_dim=2, activation=K.elu, activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())
+    model.add(Dense(64, activation="elu", activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())
+    model.add(Dense(64, activation="elu", activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())
+    model.add(Dense(64, activation="elu", activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())"""
+    """
+    model.add(Dense(16, activation="selu", activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())
+    model.add(Dense(64, input_dim=2, activation="selu", activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())
+    model.add(Dense(16, activation="selu", activity_regularizer=keras.regularizers.l2(0.01)))
+    model.add(BatchNormalization())"""
+    model.add(Dense(64, activation=K.elu))
+    model.add(BatchNormalization())
+    model.add(Dense(64, activation=K.elu))
+    model.add(BatchNormalization())
+    model.add(Dense(64, activation=K.elu))
+    model.add(BatchNormalization())
+    model.add(Dense(64, activation=K.elu))
+    model.add(BatchNormalization())
     model.add(Dense(1))
     model.add(Activation('linear'))
+
     """model = Sequential()
     model.add(Dense(8, input_dim=2, activation="relu"))
     
@@ -129,9 +184,11 @@ def graph3d(x1, x2, yy, q, appr):
     fig = plt.figure()
     ax = Axes3D(fig)
     # TIME, CO2, TTOPOIL = read_xl()
-    ax.plot3D(x1, x2, yy, color='red')  # CO2, TTOPOIL, TIME) построение графика аппроксимации
-    ax.scatter(x1, x2, q)  # построение графика исходных
+    ax.plot3D(x1, x2, yy, color='red')  # CO2, TTOPOIL, TIME) построение графика регрессии из предсказанных значений
+    ax.plot3D(x1, x2, q)  # построение графика исходных
+    print(len(x1), len(x2), len(appr))
     ax.plot3D(x1, x2, appr, color='green')  # CO2, TTOPOIL, TIME) построение графика аппроксимации
+    ax.legend(['Нейросеть', 'Исходные', 'Аналитическая'])
     xs = np.zeros(1000)
     ys = np.zeros(1000)
     zs = np.array([i for i in range(42700, 43700)])
@@ -139,6 +196,7 @@ def graph3d(x1, x2, yy, q, appr):
     ax.set_xlabel('TOIL')
     ax.set_ylabel('TIME')
     ax.set_zlabel('CONCENT')
+    ax.view_init(0, 0)
     plt.show()
 
 
@@ -169,7 +227,7 @@ def plot_results(history):
     plt.show()
 
 
-def mul_regr():  # решение Матричного уравнения AX = Y, X = QR, Мультипликативная регрессия
+def mul_regr(TTOPOIL, TIME):  # решение Матричного уравнения AX = Y, X = QR, Мультипликативная регрессия
     a = xlrd.open_workbook("dataset_last_changed.xlsx")
     sheet = a.sheet_by_index(4)
     X, Y, B = [], [], []
@@ -197,8 +255,8 @@ def mul_regr():  # решение Матричного уравнения AX = Y
     return res, x1, x2, q
 
 
-def linalg():
-    a, x1, x2, q = mul_regr()  # exp_regr()
+def linalg(TTOPOIL, TIME):
+    a, x1, x2, q = mul_regr(TTOPOIL, TIME)  # exp_regr()
     n = len(x1)
     yy = []
     for i in range(n):

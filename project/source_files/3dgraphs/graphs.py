@@ -38,12 +38,12 @@ def mul_regr():  # решение Матричного уравнения AX = Y
     q = []
     yy = []
     first = sheet.cell(0, 2).value - 1
-    for i in range(5000):
+    for i in range(4815):
         b = sheet.row_values(i)
         if '' in b or None in b:
             continue
-        b[1] += 273 # температура
-        b[2] -= first # время(относительное)
+        b[1] += 273  # температура
+        b[2] -= first  # время(относительное)
         x1.append(b[1])
         x2.append(b[2])
         q.append(b[0])
@@ -65,8 +65,9 @@ def graph3d(x1, x2, yy, q):
     fig = plt.figure()
     ax = Axes3D(fig)
     # TIME, CO2, TTOPOIL = read_xl()
-    ax.plot3D(x1, x2, yy,color='red')  # CO2, TTOPOIL, TIME) построение графика аппроксимации
+    ax.plot3D(x1, x2, yy, color='red')  # CO2, TTOPOIL, TIME) построение графика аппроксимации
     ax.scatter(x1, x2, q)  # построение графика исходных
+    ax.legend(['Аппроксимация', 'Исходные данные'])
     xs = np.zeros(1000)
     ys = np.zeros(1000)
     zs = np.array([i for i in range(42700, 43700)])
@@ -74,6 +75,7 @@ def graph3d(x1, x2, yy, q):
     ax.set_xlabel('TOIL')
     ax.set_ylabel('TIME')
     ax.set_zlabel('CONCENT')
+    ax.view_init(0, -90)
     plt.show()
 
 
@@ -85,7 +87,7 @@ def exp_regr():  # решение Матричного уравнения AX = Y
     q = []
     yy = []
     first = sheet.cell(0, 2).value - 1
-    for i in range(5000):
+    for i in range(4815):
         b = sheet.row_values(i)
         if '' in b or None in b:
             continue
@@ -106,7 +108,7 @@ def exp_regr():  # решение Матричного уравнения AX = Y
 
 
 def linalg():
-    a, x1, x2, q = mul_regr() # exp_regr()
+    a, x1, x2, q = mul_regr()  # exp_regr()
     n = len(x1)
     yy = []
     for i in range(n):
@@ -114,5 +116,6 @@ def linalg():
         # yy.append(a[0] * (math.e ** (a[1] * x1[i] + a[2] * x2[i]))) exp
     graph3d(x1, x2, yy, q)
     # print(CO2)
+
 
 linalg()
