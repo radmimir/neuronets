@@ -2,6 +2,7 @@ import numpy as np
 from keras import backend as K
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn import linear_model
+from scipy import ndimage
 
 # подключаем необходимые пакеты
 from sklearn.model_selection import train_test_split
@@ -28,35 +29,24 @@ def net():
     TIME_31, CO2_31, TTOPOIL_31, n_31 = tools.read_xl(test[1])
     n = len(TIME)
     x, y, z1, z2, z3 = [], [], [], [], []
-    x_train = np.array([TTOPOIL, TIME], dtype='float')
-    x_train = x_train.transpose()
-    y_train = np.array(CO2, dtype='float')
-    y_train = y_train.transpose()
+    x_train = np.array([TTOPOIL, TIME], dtype='float').transpose()
+    y_train = np.array(CO2, dtype='float').transpose()
 
     # testing 30
-    x_test_30 = np.array([TTOPOIL_30, TIME_30], dtype='float')
-    x_test_30 = x_test_30.transpose()
-    y_test_30 = np.array(CO2_30, dtype='float')
-    y_test_30 = y_test_30.transpose()
+    x_test_30 = np.array([TTOPOIL_30, TIME_30], dtype='float').transpose()
+    y_test_30 = np.array(CO2_30, dtype='float').transpose()
 
     # testing 31
-    x_test_31 = np.array([TTOPOIL_31, TIME_31], dtype='float')
-    x_test_31 = x_test_31.transpose()
-    y_test_31 = np.array(CO2_31, dtype='float')
-    y_test_31 = y_test_31.transpose()
-    # testing dataset
-    """TIME, CO2, TTOPOIL = read_xl(test_sheet, 4815)
-    first = float(TIME[0])
-    TIME = np.array([x - first for x in TIME])
-    x_test = np.array([TTOPOIL, TIME], dtype='float')
-    x_test = x_test.reshape(4815, 2)
-    y_test = np.array(CO2, dtype='float')
-    y_test = y_test.reshape(4815, 1)"""
-    (x_train1, x_train2, y_train1, y_train2) = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+    x_test_31 = np.array([TTOPOIL_31, TIME_31], dtype='float').transpose()
+    y_test_31 = np.array(CO2_31, dtype='float').transpose()
+
+    # (x_train1, x_train2, y_train1, y_train2) = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
     poly = PolynomialFeatures(degree=6)
     X_1 = poly.fit_transform(x_train)
     clf = linear_model.LinearRegression(normalize=True)
     history = clf.fit(X_1, y_train)
+    metric1 = clf.score(X_1, y_train)
+    print(metric1)
     # predictions
     predictions_29 = clf.predict(X_1)  # по обучающей выборке
     predictions_29 = predictions_29.reshape(1, len(predictions_29))
@@ -66,11 +56,15 @@ def net():
     predictions_30 = clf.predict(x_test_30_)
     predictions_30 = predictions_30.reshape(1, len(predictions_30))
     predictions_30 = list(predictions_30[0])
+    metric_30 = clf.score(x_test_30_, y_test_30)
+    print(metric_30)
     # 30
     x_test_31_ = poly.fit_transform(x_test_31)
     predictions_31 = clf.predict(x_test_31_)
     predictions_31 = predictions_31.reshape(1, len(predictions_31))
     predictions_31 = list(predictions_31[0])
+    metric_31 = clf.score(x_test_31_, y_test_31)
+    print(metric_31)
     # старая модель по keras
     """model = create_mlp(2, x_train, regress=True)
     model.compile(optimizer='adam',
@@ -94,11 +88,23 @@ def net():
         z3.append(mean([appr[i], appr[i - step], appr[i - 2 * step], appr[i - 3 * step], appr[i - 4 * step]]))"""
     z1 = predictions_29
     z3 = regression.linalg(TTOPOIL, TIME, CO2)
-    # graphs.graph3d(TIME, TTOPOIL, z1, CO2, z3, x, y, labels, number_train)
-    x = [TIME, TIME_30, TIME_31]
-    y = [TTOPOIL, TTOPOIL_30, TTOPOIL_31]
-    z = [CO2, CO2_30, CO2_31]
-    graphs.graph3d_3trans(x, y, z, labels=trans_3_labels)
+    graphs.graph3d(TIME, TTOPOIL, z1, CO2, z3, x, y, labels, number_train)
+    x = list(map(tools.gauss, [TIME, TIME_30, TIME_31]))
+    for i in range(len(y)):
+        y[i] = ndimage.gaussian_filter(y[i], sigma=100., order=0)
+    z = list(map(tools.gauss, [CO2, CO2_30, CO2_31]))
+    # построение по 29 гифки
+    x = list(map(tools.gauss, [TIME, TIME, TIME]))
+    y = list(map(tools.gauss, [TTOPOIL, TTOPOIL, TTOPOIL]))
+    for i in range(len(y)):
+        y[i] = ndimage.gaussian_filter(y[i], sigma=100., order=0)
+    z = [z1, z3]
+    z = list(map(tools.gauss, z))
+    z.insert(1, CO2)
+
+    graphs.create_gif(x, y, z, labels)
+    # graphs.graph3d_3trans(x, y, z, labels=trans_3_labels)
+
     # plot_model(model, "model.png", True, True, expand_nested=True)
     # plot_results(history)
 

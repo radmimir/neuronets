@@ -60,11 +60,9 @@ def create_gif(x, y, z, labels):  # 3 графика 3*tuple(
         fig = plt.figure()
         ax = fig.gca(projection='3d')
         ax.plot3D(x1, y1, z1,
-                  color='red',
-                  linewidth=3.0)  # CO2, TTOPOIL, TIME) построение графика регрессии из предсказанных значений
-        ax.plot3D(x2, y2, z2, linewidth=0.5)  # построение графика исходных данных
-        ax.plot3D(x3, y3, z3, color='green',
-                  linewidth=3.0)  # CO2, TTOPOIL, TIME) построение графика аппроксимации
+                  color='red', linewidth=2.0)  # CO2, TTOPOIL, TIME) нейросетевая модель
+        ax.scatter(x2[::20], y2[::20], z2[::20], s=20, c='black')  # построение графика исходных
+        ax.plot3D(x3, y3, z3, color='green', linewidth=2.0)  # CO2, TTOPOIL, TIME) построение графика аппроксимации
         ax.set_xlabel(labels[0])
         ax.set_xlabel(labels[1])
         ax.set_xlabel(labels[2])
@@ -75,6 +73,7 @@ def create_gif(x, y, z, labels):  # 3 графика 3*tuple(
         filename = 'frames/step' + str(angle) + '.png'
         plt.savefig(filename, dpi=96)
         plt.gca()
+    os.system("convert -delay 10 frames/step*.png animated_3d.gif")
 
 
 def graph3d(x1, x2, net, input_data, appr, x1new, x2new, labels, number_train):
@@ -94,14 +93,14 @@ def graph3d(x1, x2, net, input_data, appr, x1new, x2new, labels, number_train):
     ax.set_zlabel(labels[2])
     ax.set_label(str(number_train))
     ax.view_init(0, -90)
-    ax.view_init(0, -180)
-    filename = 'results/step_-180.png'
+    ax.view_init(0, 0)
+    filename = 'results/step_0.png'
     plt.savefig(filename, dpi=96)
     ax.view_init(0, -90)
     filename = 'results/step_-90.png'
     plt.savefig(filename, dpi=96)
     ax.view_init(0, -90)
-    plt.show()
+    # plt.show()
 
 
 def graph3d_3trans(x, y, z, labels):  # (x1, x2, net, input_data, appr, labels):
@@ -127,8 +126,8 @@ def graph3d_3trans(x, y, z, labels):  # (x1, x2, net, input_data, appr, labels):
     ax.set_ylabel(labels[1])
     ax.set_zlabel(labels[2])
     ax.view_init(0, -90)
-    ax.view_init(0, -180)
-    filename = 'results/step_-180.png'
+    ax.view_init(0, 180)
+    filename = 'results/step_180.png'
     plt.savefig(filename, dpi=96)
     ax.view_init(0, -90)
     filename = 'results/step_-90.png'
