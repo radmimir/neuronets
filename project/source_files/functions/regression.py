@@ -49,11 +49,11 @@ def linalg(TTOPOIL, TIME, conc, exp=False):
     else:
         a, x1, x2, q = mul_regr(TTOPOIL, TIME, conc)
     n = len(x1)
-    yy = []
+    appr = []
     if exp:
         for i in range(n):
-            yy.append(a[0] * (math.e ** (a[1] * x1[i] + a[2] * x2[i])))
+            appr.append(a[0] * (math.e ** (a[1] * x1[i] + a[2] * x2[i])))
     else:
         for i in range(n):
-            yy.append(a[0] * (x1[i] ** a[1]) * (x2[i] ** a[2]))
-    return yy
+            appr.append(a[0] * (x1[i] ** a[1]) * (x2[i] ** a[2]))
+    return appr

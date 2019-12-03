@@ -77,25 +77,58 @@ def create_gif(x, y, z, labels):  # 3 графика 3*tuple(
         plt.gca()
 
 
-def graph3d(x1, x2, yy, q, appr, x1new, x2new, labels, number_train):
+def graph3d(x1, x2, net, input_data, appr, x1new, x2new, labels, number_train):
     fig = plt.figure()
     ax = Axes3D(fig)
-    q = tools.gauss(q)
-    yy = tools.gauss(yy)
+    net = tools.gauss(net)
+    # input_data = tools.gauss(input_data)
     appr = tools.gauss(appr)
     x2 = ndimage.gaussian_filter(x2, sigma=100., order=0)
-    ax.plot3D(x1, x2, yy,
-              color='red', linewidth=1.0)  # CO2, TTOPOIL, TIME) # построение графика исходных
+    ax.plot3D(x1, x2, net,
+              color='red', linewidth=2.0)  # CO2, TTOPOIL, TIME) нейросетевая модель
+    ax.scatter(x1[::20], x2[::20], input_data[::20], s=20, c='black')  # построение графика исходных
     ax.plot3D(x1, x2, appr, color='green', linewidth=2.0)  # CO2, TTOPOIL, TIME) построение графика аппроксимации
-    ax.scatter(x1[::30], x2[::30], q[::30], s=20, c='black')
     ax.legend(labels[3:6])
     ax.set_xlabel(labels[0])
     ax.set_ylabel(labels[1])
     ax.set_zlabel(labels[2])
     ax.set_label(str(number_train))
     ax.view_init(0, -90)
-    ax.view_init(0, 180)
-    filename = 'results/step_180.png'
+    ax.view_init(0, -180)
+    filename = 'results/step_-180.png'
+    plt.savefig(filename, dpi=96)
+    ax.view_init(0, -90)
+    filename = 'results/step_-90.png'
+    plt.savefig(filename, dpi=96)
+    ax.view_init(0, -90)
+    plt.show()
+
+
+def graph3d_3trans(x, y, z, labels):  # (x1, x2, net, input_data, appr, labels):
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    x1, x2, x3 = x
+    y1, y2, y3 = y
+    z1, z2, z3 = z
+    z1 = tools.gauss(z1)
+    z2 = tools.gauss(z2)
+    z3 = tools.gauss(z3)
+    y1 = ndimage.gaussian_filter(y1, sigma=100., order=0)
+    y2 = ndimage.gaussian_filter(y2, sigma=100., order=0)
+    y3 = ndimage.gaussian_filter(y3, sigma=100., order=0)
+    ax.plot3D(x1, y1, z1,
+              color='red', linewidth=2.0)  # trans_29
+    ax.plot3D(x2, y2, z2,
+              color='black', linewidth=2.0)  # trans_30
+    ax.plot3D(x3, y3, z3,
+              color='green', linewidth=2.0)  # trans_31
+    ax.legend(labels[3:6])
+    ax.set_xlabel(labels[0])
+    ax.set_ylabel(labels[1])
+    ax.set_zlabel(labels[2])
+    ax.view_init(0, -90)
+    ax.view_init(0, -180)
+    filename = 'results/step_-180.png'
     plt.savefig(filename, dpi=96)
     ax.view_init(0, -90)
     filename = 'results/step_-90.png'

@@ -11,23 +11,39 @@ from keras.layers.core import Dense
 
 from functions import tools, regression, graphs
 
-labels = ['TOIL', 'TIME', 'CONCENT',
-          'Прогноз нейросети', 'Исх. данные', 'Анал. модель']
-
+labels = ['TIME', 'TOIL', 'CONCENT CO2',
+          'Нейросетевая модель', 'Анал. модель', 'Исх. данные']
 train_sheet = '#29'
+test = '#30', '#31'
 test_sheet = '#30'
+trans_3_labels = ['TIME', 'TOIL', 'CONCENT CO2',
+                  'Тр 29', 'Тр 30', 'Тр 31']
 number_train = int(train_sheet[1:])
 
 
 def net():
     # training dataset
     TIME, CO2, TTOPOIL, n = tools.read_xl(train_sheet)
+    TIME_30, CO2_30, TTOPOIL_30, n_30 = tools.read_xl(test[0])
+    TIME_31, CO2_31, TTOPOIL_31, n_31 = tools.read_xl(test[1])
     n = len(TIME)
     x, y, z1, z2, z3 = [], [], [], [], []
     x_train = np.array([TTOPOIL, TIME], dtype='float')
     x_train = x_train.transpose()
     y_train = np.array(CO2, dtype='float')
     y_train = y_train.transpose()
+
+    # testing 30
+    x_test_30 = np.array([TTOPOIL_30, TIME_30], dtype='float')
+    x_test_30 = x_test_30.transpose()
+    y_test_30 = np.array(CO2_30, dtype='float')
+    y_test_30 = y_test_30.transpose()
+
+    # testing 31
+    x_test_31 = np.array([TTOPOIL_31, TIME_31], dtype='float')
+    x_test_31 = x_test_31.transpose()
+    y_test_31 = np.array(CO2_31, dtype='float')
+    y_test_31 = y_test_31.transpose()
     # testing dataset
     """TIME, CO2, TTOPOIL = read_xl(test_sheet, 4815)
     first = float(TIME[0])
@@ -37,14 +53,24 @@ def net():
     y_test = np.array(CO2, dtype='float')
     y_test = y_test.reshape(4815, 1)"""
     (x_train1, x_train2, y_train1, y_train2) = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
-    poly = PolynomialFeatures(degree=5)
+    poly = PolynomialFeatures(degree=6)
     X_1 = poly.fit_transform(x_train)
-    clf = linear_model.LinearRegression()
+    clf = linear_model.LinearRegression(normalize=True)
     history = clf.fit(X_1, y_train)
-    x_train1 = poly.fit_transform(x_train)
-    predictions1 = clf.predict(x_train1)
-    predictions1 = predictions1.reshape(1, len(predictions1))
-    predictions1 = list(predictions1[0])
+    # predictions
+    predictions_29 = clf.predict(X_1)  # по обучающей выборке
+    predictions_29 = predictions_29.reshape(1, len(predictions_29))
+    predictions_29 = list(predictions_29[0])
+    # 30
+    x_test_30_ = poly.fit_transform(x_test_30)
+    predictions_30 = clf.predict(x_test_30_)
+    predictions_30 = predictions_30.reshape(1, len(predictions_30))
+    predictions_30 = list(predictions_30[0])
+    # 30
+    x_test_31_ = poly.fit_transform(x_test_31)
+    predictions_31 = clf.predict(x_test_31_)
+    predictions_31 = predictions_31.reshape(1, len(predictions_31))
+    predictions_31 = list(predictions_31[0])
     # старая модель по keras
     """model = create_mlp(2, x_train, regress=True)
     model.compile(optimizer='adam',
@@ -66,11 +92,13 @@ def net():
         z1.append(mean([predictions[i], predictions[i - step], predictions[i - 2 * step], predictions[i - 3 * step],
                         predictions[i - 4 * step]]))
         z3.append(mean([appr[i], appr[i - step], appr[i - 2 * step], appr[i - 3 * step], appr[i - 4 * step]]))"""
-    z1 = predictions1
+    z1 = predictions_29
     z3 = regression.linalg(TTOPOIL, TIME, CO2)
-    print("z1=", len(TTOPOIL))
-    print("z3=", len(z3))
-    graphs.graph3d(TIME, TTOPOIL, z1, CO2, z3, x, y, labels, number_train)
+    # graphs.graph3d(TIME, TTOPOIL, z1, CO2, z3, x, y, labels, number_train)
+    x = [TIME, TIME_30, TIME_31]
+    y = [TTOPOIL, TTOPOIL_30, TTOPOIL_31]
+    z = [CO2, CO2_30, CO2_31]
+    graphs.graph3d_3trans(x, y, z, labels=trans_3_labels)
     # plot_model(model, "model.png", True, True, expand_nested=True)
     # plot_results(history)
 
